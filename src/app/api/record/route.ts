@@ -1,12 +1,12 @@
-// ÀÑ‚ğæ“¾‚µ‚Ü‚·
+// å®Ÿç¸¾ã‚’å–å¾—ã—ã¾ã™
 export async function GET(
     req: Request
   ) {
     const { searchParams } = new URL(req.url)
   
-    // ƒpƒ‰ƒ[ƒ^‚ÌŒŸØ
+    // ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã®æ¤œè¨¼
     if (!searchParams.has('userId')) {
-      // userId ‚ª‚È‚¢‚Ì‚ÅƒGƒ‰[
+      // userId ãŒãªã„ã®ã§ã‚¨ãƒ©ãƒ¼
       return new Response(JSON.stringify({ message: "userId is required" }), {
         status: 400,
         headers: {
@@ -16,7 +16,7 @@ export async function GET(
     }
   
     if (!searchParams.has('startDate')) {
-      // startDate ‚ª‚È‚¢‚Ì‚ÅƒGƒ‰[
+      // startDate ãŒãªã„ã®ã§ã‚¨ãƒ©ãƒ¼
       return new Response(JSON.stringify({ message: "startDate is required" }), {
         status: 400,
         headers: {
@@ -26,7 +26,7 @@ export async function GET(
     }
   
     if (!searchParams.has('endDate')) {
-      // endDate ‚ª‚È‚¢‚Ì‚ÅƒGƒ‰[
+      // endDate ãŒãªã„ã®ã§ã‚¨ãƒ©ãƒ¼
       return new Response(JSON.stringify({ message: "endDate is required" }), {
         status: 400,
         headers: {
@@ -40,7 +40,7 @@ export async function GET(
     const endDate = searchParams.get('endDate')
   
     try {
-      // Express ƒT[ƒo[‚ÉƒŠƒNƒGƒXƒg
+      // Express ã‚µãƒ¼ãƒãƒ¼ã«ãƒªã‚¯ã‚¨ã‚¹ãƒˆ
       const response = await fetch('http://localhost:4000/api/getRecordsList', {
         method: 'POST',
         headers: {
@@ -56,7 +56,7 @@ export async function GET(
       });
   
       if (response.ok) {
-        // ƒŠƒNƒGƒXƒg‚ª¬Œ÷
+        // ãƒªã‚¯ã‚¨ã‚¹ãƒˆãŒæˆåŠŸ
         const jsonResponse = await response.json();
         return new Response(JSON.stringify(jsonResponse), {
           status: 200,
@@ -65,7 +65,7 @@ export async function GET(
           }
         });
       } else {
-        // ƒŠƒNƒGƒXƒg‚ª¸”s
+        // ãƒªã‚¯ã‚¨ã‚¹ãƒˆãŒå¤±æ•—
         return new Response(JSON.stringify({ message: response.statusText }), {
           status: response.status,
           headers: {
@@ -74,7 +74,7 @@ export async function GET(
         });
       }
     } catch (error) {
-      // ’ÊM‚ª¸”s (502ƒGƒ‰[:Bad Gateway‚Æ‚·‚é)
+      // é€šä¿¡ãŒå¤±æ•— (502ã‚¨ãƒ©ãƒ¼:Bad Gatewayã¨ã™ã‚‹)
       return new Response(JSON.stringify({ message: "Failed to connect to the server" }), {
         status: 502,
         headers: {
