@@ -2,17 +2,20 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Image from 'next/image';
+import { DateClickArg } from "@fullcalendar/interaction";
 import { RecordBarChart, RecordBarChartProps } from '../components/charts/RecordBarChart';
-import { SampleCalender4 } from '../components/calender/SampleCalender';
+import { RecordCalendar } from '../components/calender/RecordCalender';
 import { Header } from '../components/header/header';
+import { RecordDialog } from '../components/dialog/RecordDialog';
 import { RecordData } from '../types/recordTypes';
 
 export default function Home() {
   const [userName, setUserName] = useState('ゲスト');
   const [userId, setUserId] = useState('');
   const [records, setRecords] = useState<RecordData[]>([]);
+  const [calendarRecords, setCalendarRecords] = useState<RecordData[]>([]);
   const [currentTime, setCurrentTime] = useState('');
-
+  const [isDialogOpen, setDialogOpen] = useState(false);
   
   const fetchUserData = async () => {
     try {
@@ -64,11 +67,80 @@ export default function Home() {
     fetchUserData();
   },[])
 
+  const fetchCalendarRecordData = useCallback(async () => {
+    const endDateObject = new Date(currentTime);
+    const startDateObject = new Date(currentTime);
+    startDateObject.setDate(endDateObject.getDate() - 30);
+
+    try {
+      const response = await fetch(`/api/record?userId=${userId}&startDate=${startDateObject.toISOString()}&endDate=${endDateObject.toISOString()}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (response.ok) {
+        const responseData = await response.json();
+        setCalendarRecords(responseData);
+        console.log('受け取った値:', responseData);
+      } else {
+        console.error('送信エラー:', response.statusText);
+      }
+    } catch (error) {
+      console.error('通信エラー:', error);
+    }
+  }, [userId,currentTime]);
+
+  // 表示範囲変更コールバック関数
+  const handleDatesSet = useCallback(async (arg:any) => {
+    const startDate = arg.startStr; // 表示範囲の開始日
+    const endDate = arg.endStr;   // 表示範囲の終了日
+
+    const startDateObject = new Date(startDate);
+    const endDateObject = new Date(endDate);
+  
+    console.log(`カレンダー開始日:${startDate}`);
+    console.log(`カレンダー最終日:${endDate}`);
+
+    // データの再取得
+    try {
+      const response = await fetch(`/api/record?userId=${userId}&startDate=${startDateObject.toISOString()}&endDate=${endDateObject.toISOString()}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (response.ok) {
+        const responseData = await response.json();
+        setCalendarRecords(responseData);
+        console.log('受け取った値:', responseData);
+      } else {
+        console.error('送信エラー:', response.statusText);
+      }
+    } catch (error) {
+      console.error('通信エラー:', error);
+    }
+  }, [userId]);
+
   useEffect(()=>{
     if (userId) { // userIdがセットされている場合のみfetchRecordDataを実行
       fetchRecordData();
+      fetchCalendarRecordData();
     }
-  },[userId, fetchRecordData])
+  },[userId, fetchRecordData, fetchCalendarRecordData])
+
+  const openDialog = () => setDialogOpen(true);
+  const closeDialog = () => setDialogOpen(false);
+
+  // 日付がクリックされたときに呼ばれるハンドラ
+  const handleDateClick = useCallback((arg: DateClickArg) => {
+    //alert(arg.dateStr);
+    openDialog();
+  }, []);
+
+  const handleRecordSave = useCallback(async (date: Date, duration: number, note: string) => {
+    console.log(`date:${date}/duration:${duration}/note:${note}`);
+  },[]);
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
@@ -76,7 +148,9 @@ export default function Home() {
       {`こんにちは ${userName} さん`}
       <p>{`今の時刻は${currentTime}`}</p>
       <RecordBarChart endDate={currentTime} records={records}/>
-      <SampleCalender4 />
+      <RecordCalendar onDatesSet={handleDatesSet} onDateClick={handleDateClick} records={calendarRecords}/>
+      <RecordDialog isOpen={isDialogOpen} onClose={closeDialog} onSave={handleRecordSave}>
+      </RecordDialog>
     </main>
   )
 }
