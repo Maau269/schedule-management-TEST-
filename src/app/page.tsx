@@ -7,7 +7,7 @@ import { RecordBarChart, RecordBarChartProps } from '../components/charts/Record
 import { RecordCalendar } from '../components/calender/RecordCalender';
 import { Header } from '../components/header/header';
 import { RecordDialog } from '../components/dialog/RecordDialog';
-import { RecordData } from '../types/recordTypes';
+import { RecordData, EditingRecordData } from '../types/recordTypes';
 
 export default function Home() {
   const [userName, setUserName] = useState('ゲスト');
@@ -16,7 +16,12 @@ export default function Home() {
   const [calendarRecords, setCalendarRecords] = useState<RecordData[]>([]);
   const [currentTime, setCurrentTime] = useState('');
   const [isDialogOpen, setDialogOpen] = useState(false);
-  
+  const [editingRecord, setEditingRecord] = useState<EditingRecordData>({
+    date: new Date(),
+    duration: 0,
+    note: ''
+  });
+
   const fetchUserData = async () => {
     try {
       const response = await fetch('/api/user?firebaseId=abcd1234', {
@@ -133,11 +138,54 @@ export default function Home() {
   const closeDialog = () => setDialogOpen(false);
 
   // 日付がクリックされたときに呼ばれるハンドラ
-  const handleDateClick = useCallback((arg: DateClickArg) => {
-    //alert(arg.dateStr);
-    openDialog();
+  const handleDateClick = useCallback(async (arg: DateClickArg) => {
+    const clickDate = arg.dateStr;
+    const clickDateObject = new Date(clickDate);
+    console.log(`カレンダーのクリック日:${clickDate}`);
+
+    // データの再取得
+    try {
+      const response = await fetch(`/api/record?userId=${userId}&startDate=${clickDateObject.toISOString()}&endDate=${clickDateObject.toISOString()}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        // 編集用の空の実績情報を作る
+        let editing: EditingRecordData = {
+          date: clickDateObject,
+          duration: 0,
+          note: ''
+        };
+
+        // 実績の配列を受け取る
+        const responseData: RecordData[] = await response.json();
+        console.log('受け取った値:', responseData);
+
+        if (responseData.length > 0) {
+          //  実績の配列が空でないとき、配列の先頭のアイテムを編集する
+          editing.date = new Date(responseData[0].date);
+          editing.duration = responseData[0].duration;
+          editing.note = responseData[0].note;
+        }
+
+        setEditingRecord(editing);
+        console.log('編集をする値:', editing);
+        
+        openDialog();
+
+      } else {
+        console.error('送信エラー:', response.statusText);
+      }
+    } catch (error) {
+      console.error('通信エラー:', error);
+    }
+
   }, []);
 
+  // 実績保存時に呼ばれるハンドラ
   const handleRecordSave = useCallback(async (date: Date, duration: number, note: string) => {
     console.log(`date:${date}/duration:${duration}/note:${note}`);
   },[]);
@@ -149,7 +197,7 @@ export default function Home() {
       <p>{`今の時刻は${currentTime}`}</p>
       <RecordBarChart endDate={currentTime} records={records}/>
       <RecordCalendar onDatesSet={handleDatesSet} onDateClick={handleDateClick} records={calendarRecords}/>
-      <RecordDialog isOpen={isDialogOpen} onClose={closeDialog} onSave={handleRecordSave}>
+      <RecordDialog record={editingRecord} isOpen={isDialogOpen} onClose={closeDialog} onSave={handleRecordSave}>
       </RecordDialog>
     </main>
   )

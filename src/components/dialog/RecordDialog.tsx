@@ -3,18 +3,20 @@
 import React from 'react';
 import { useState, useEffect } from "react";
 import styles from "./dialog.module.css";
+import { EditingRecordData } from '../../types/recordTypes';
 
 export type DialogProps = {
+  record: EditingRecordData;
   isOpen: boolean;
   onClose: () => void;
   onSave: (date: Date, duration: number, note: string) => void;
 };
 
 // 実績ダイアログ
-export function RecordDialog({ isOpen, onClose, onSave } : DialogProps) {
-  const [date, setDate] = useState<Date>(new Date);
-  const [duration, setDuration] = useState<number>(0);
-  const [note, setNote] = useState<string>('');
+export function RecordDialog({ record, isOpen, onClose, onSave } : DialogProps) {
+  const [date, setDate] = useState<Date>(record.date);
+  const [duration, setDuration] = useState<number>(record.duration);
+  const [note, setNote] = useState<string>(record.note);
 
   // Close 状態になったときに呼ばれる
   useEffect(() => {
@@ -29,6 +31,13 @@ export function RecordDialog({ isOpen, onClose, onSave } : DialogProps) {
       document.removeEventListener('keydown', handleEscape);
     };
   }, [onClose]);
+
+  // record が変化したときに呼ばれる
+  useEffect(() => {
+    setDate(record.date);
+    setDuration(record.duration);
+    setNote(record.note);
+  }, [record]);
 
   if (!isOpen)
     return null;
